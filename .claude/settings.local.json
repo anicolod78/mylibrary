@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter --version)",
+      "Bash(echo \"--- flutter exit: $? ---\")",
+      "Bash(dart --version)",
+      "Bash(echo \"--- dart exit: $? ---\")",
+      "Bash(flutter config *)",
+      "Bash(flutter devices *)",
+      "Bash(flutter doctor *)"
+    ]
+  }
+}
