@@ -13,28 +13,42 @@ const int content = 720; // ~70% → più margine attorno ai libri
 const double fadeStart = 0.78; // inizio sfumatura (frazione del semi-lato)
 const double fadeEnd = 0.99; // fine sfumatura (bordo completamente sfumato)
 
+// Colore di sfondo desiderato ("azzurro puffo") e luminanza di riferimento
+// del teal originale (canale G del teal di sfondo), per la ricolorazione.
+const int sr = 79, sg = 195, sb = 247; // #4FC3F7
+const double baseG = 93.0;
+
+int _cl(num v) => v.round().clamp(0, 255);
+
+/// True se il pixel appartiene alla famiglia "teal" (sfondo/ombre/barcode).
+/// I libri (rosso/giallo/blu navy/crema) restano esclusi.
+bool _isTeal(int r, int g, int b) =>
+    g > r && b > r && (g - b).abs() <= 25 && g < 210;
+
+/// Ricolora il teal in azzurro preservando la luminosità relativa (così il
+/// barcode, teal più chiaro, resta visibile come azzurro più chiaro).
+img.Image _recolor(img.Image src) {
+  final out = img.Image(width: src.width, height: src.height, numChannels: 3);
+  for (var y = 0; y < src.height; y++) {
+    for (var x = 0; x < src.width; x++) {
+      final p = src.getPixel(x, y);
+      final r = p.r.toInt(), g = p.g.toInt(), b = p.b.toInt();
+      if (_isTeal(r, g, b)) {
+        final s = g / baseG;
+        out.setPixelRgb(x, y, _cl(sr * s), _cl(sg * s), _cl(sb * s));
+      } else {
+        out.setPixelRgb(x, y, r, g, b);
+      }
+    }
+  }
+  return out;
+}
+
 void main() {
-  final src = img.decodePng(File('assets/icon/books.png').readAsBytesSync())!;
+  final original = img.decodePng(File('assets/icon/books.png').readAsBytesSync())!;
+  final src = _recolor(original);
 
-  // Colore teal di sfondo: media del bordo escludendo gli angoli scuri.
-  int rs = 0, gs = 0, bs = 0, n = 0;
-  void acc(int x, int y) {
-    final c = src.getPixel(x, y);
-    rs += c.r.toInt();
-    gs += c.g.toInt();
-    bs += c.b.toInt();
-    n++;
-  }
-
-  for (var x = 20; x < src.width - 20; x += 10) {
-    acc(x, 4);
-    acc(x, src.height - 5);
-  }
-  for (var y = 20; y < src.height - 20; y += 10) {
-    acc(4, y);
-    acc(src.width - 5, y);
-  }
-  final br = (rs / n).round(), bg = (gs / n).round(), bb = (bs / n).round();
+  final br = sr, bg = sg, bb = sb;
   final fill = img.ColorRgba8(br, bg, bb, 255);
   final hex = '#${br.toRadixString(16).padLeft(2, '0')}'
       '${bg.toRadixString(16).padLeft(2, '0')}'
