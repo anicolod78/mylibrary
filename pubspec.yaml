@@ -106,13 +106,13 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: false
-  image_path: "assets/icon/icon.png"
-  adaptive_icon_background: "#3E7C88"
-  adaptive_icon_foreground: "assets/icon/icon_foreground.png"
+  image_path: "assets/icon/books_icon.png"
+  adaptive_icon_background: "#105d5e"
+  adaptive_icon_foreground: "assets/icon/books_icon.png"
   min_sdk_android: 21
   remove_alpha_ios: false
   web:
     generate: true
-    image_path: "assets/icon/icon.png"
-    background_color: "#3E7C88"
-    theme_color: "#3E7C88"
+    image_path: "assets/icon/books_icon.png"
+    background_color: "#105d5e"
+    theme_color: "#105d5e"
