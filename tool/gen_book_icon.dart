@@ -1,7 +1,7 @@
 // ignore_for_file: avoid_print
-// Genera l'icona dell'app da assets/icon/books.png:
+// Genera l'icona dell'app da assets/icon/books.png, SENZA ricolorazioni:
 //  - libri ridotti con margine (non vengono tagliati dalla mascheratura)
-//  - bordi sfumati nello sfondo teal uniforme → nessun riquadro/bordo netto
+//  - bordi sfumati sullo sfondo (campionato dall'immagine) → nessun riquadro
 // Produce books_icon.png (1024) usato sia per l'icona legacy sia per il
 // foreground adattivo. Stampa il colore di sfondo da usare come background.
 // Eseguire con:  dart run tool/gen_book_icon.dart
@@ -9,85 +9,53 @@ import 'dart:io';
 import 'package:image/image.dart' as img;
 
 const int size = 1024;
-const int content = 720; // ~70% → più margine attorno ai libri
-const double fadeStart = 0.78; // inizio sfumatura (frazione del semi-lato)
-const double fadeEnd = 0.99; // fine sfumatura (bordo completamente sfumato)
-
-// Colore di sfondo desiderato ("azzurro puffo") e luminanza di riferimento
-// del teal originale (canale G del teal di sfondo), per la ricolorazione.
-const int sr = 79, sg = 195, sb = 247; // #4FC3F7
-const double baseG = 93.0;
+const int content = 880; // ~86% → i libri hanno già un margine interno
+const double fadeStart = 0.88; // sfumatura solo sul bordo estremo
+const double fadeEnd = 0.99;
 
 int _cl(num v) => v.round().clamp(0, 255);
 
-/// True se il pixel appartiene alla famiglia "teal" (sfondo/ombre/barcode).
-/// I libri (rosso/giallo/blu navy/crema) restano esclusi.
-bool _isTeal(int r, int g, int b) =>
-    g > r && b > r && (g - b).abs() <= 25 && g < 210;
-
-/// Ricolora il teal: lo sfondo diventa azzurro, mentre il **barcode** (teal
-/// più chiaro dello sfondo) diventa **nero** per risaltare. I libri restano
-/// invariati.
-img.Image _recolor(img.Image src) {
-  const barcodeLo = 110.0; // sotto = sfondo (azzurro)
-  const barcodeHi = 126.0; // sopra = barcode (nero)
-  const kr = 20, kg = 20, kb = 22; // "nero" leggermente morbido
-  final out = img.Image(width: src.width, height: src.height, numChannels: 3);
-  for (var y = 0; y < src.height; y++) {
-    for (var x = 0; x < src.width; x++) {
-      final p = src.getPixel(x, y);
-      final r = p.r.toInt(), g = p.g.toInt(), b = p.b.toInt();
-      if (_isTeal(r, g, b)) {
-        final s = g / baseG;
-        final blueR = sr * s, blueG = sg * s, blueB = sb * s;
-        // Il nero si applica solo nella zona del barcode (in basso al centro),
-        // così i riflessi chiari sui libri non vengono anneriti.
-        final nx = x / src.width, ny = y / src.height;
-        final inBarcode =
-            nx >= 0.25 && nx <= 0.72 && ny >= 0.68 && ny <= 0.95;
-        // t: 0 = sfondo azzurro, 1 = barcode nero (transizione morbida).
-        final t = inBarcode
-            ? ((g - barcodeLo) / (barcodeHi - barcodeLo)).clamp(0.0, 1.0)
-            : 0.0;
-        out.setPixelRgb(
-          x,
-          y,
-          _cl(blueR * (1 - t) + kr * t),
-          _cl(blueG * (1 - t) + kg * t),
-          _cl(blueB * (1 - t) + kb * t),
-        );
-      } else {
-        out.setPixelRgb(x, y, r, g, b);
-      }
-    }
-  }
-  return out;
-}
-
 void main() {
-  final original = img.decodePng(File('assets/icon/books.png').readAsBytesSync())!;
-  final src = _recolor(original);
+  final src = img.decodePng(File('assets/icon/books.png').readAsBytesSync())!;
 
-  final br = sr, bg = sg, bb = sb;
+  // Colore di sfondo: media dei pixel del bordo dell'immagine.
+  int rs = 0, gs = 0, bs = 0, n = 0;
+  void acc(int x, int y) {
+    final c = src.getPixel(x, y);
+    rs += c.r.toInt();
+    gs += c.g.toInt();
+    bs += c.b.toInt();
+    n++;
+  }
+
+  for (var x = 6; x < src.width - 6; x += 6) {
+    acc(x, 3);
+    acc(x, src.height - 4);
+  }
+  for (var y = 6; y < src.height - 6; y += 6) {
+    acc(3, y);
+    acc(src.width - 4, y);
+  }
+  final br = (rs / n).round(), bg = (gs / n).round(), bb = (bs / n).round();
   final fill = img.ColorRgba8(br, bg, bb, 255);
   final hex = '#${br.toRadixString(16).padLeft(2, '0')}'
       '${bg.toRadixString(16).padLeft(2, '0')}'
       '${bb.toRadixString(16).padLeft(2, '0')}';
 
-  // Canvas teal uniforme.
+  // Canvas con lo stesso colore di sfondo.
   final canvas = img.Image(width: size, height: size, numChannels: 4);
   img.fill(canvas, color: fill);
 
-  // Libri ridotti, sfumati verso il teal ai bordi.
-  final books =
-      img.copyResize(src, width: content, height: content, interpolation: img.Interpolation.cubic);
+  // Immagine ridotta, con bordi sfumati verso lo sfondo.
+  final books = img.copyResize(src,
+      width: content, height: content, interpolation: img.Interpolation.cubic);
   const off = (size - content) ~/ 2;
   final half = content / 2;
   for (var y = 0; y < content; y++) {
     for (var x = 0; x < content; x++) {
       final nx = (x - half).abs() / half;
       final ny = (y - half).abs() / half;
-      final d = nx > ny ? nx : ny; // distanza "quadrata" dal centro
+      final d = nx > ny ? nx : ny;
       double a;
       if (d <= fadeStart) {
         a = 1.0;
@@ -97,15 +65,18 @@ void main() {
         a = 1.0 - (d - fadeStart) / (fadeEnd - fadeStart);
       }
       final p = books.getPixel(x, y);
-      final bx = off + x, by = off + y;
-      final r = (p.r * a + br * (1 - a)).round();
-      final g = (p.g * a + bg * (1 - a)).round();
-      final b = (p.b * a + bb * (1 - a)).round();
-      canvas.setPixelRgba(bx, by, r, g, b, 255);
+      canvas.setPixelRgba(
+        off + x,
+        off + y,
+        _cl(p.r * a + br * (1 - a)),
+        _cl(p.g * a + bg * (1 - a)),
+        _cl(p.b * a + bb * (1 - a)),
+        255,
+      );
     }
   }
 
   File('assets/icon/books_icon.png').writeAsBytesSync(img.encodePng(canvas));
-  print('Sfondo teal: $hex');
-  print('Generato: books_icon.png (libri ~$content px, con sfumatura)');
+  print('Sfondo: $hex');
+  print('Generato: books_icon.png (senza ricolorazioni)');
 }
