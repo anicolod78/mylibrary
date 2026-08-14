@@ -25,9 +25,13 @@ int _cl(num v) => v.round().clamp(0, 255);
 bool _isTeal(int r, int g, int b) =>
     g > r && b > r && (g - b).abs() <= 25 && g < 210;
 
-/// Ricolora il teal in azzurro preservando la luminosità relativa (così il
-/// barcode, teal più chiaro, resta visibile come azzurro più chiaro).
+/// Ricolora il teal: lo sfondo diventa azzurro, mentre il **barcode** (teal
+/// più chiaro dello sfondo) diventa **nero** per risaltare. I libri restano
+/// invariati.
 img.Image _recolor(img.Image src) {
+  const barcodeLo = 110.0; // sotto = sfondo (azzurro)
+  const barcodeHi = 126.0; // sopra = barcode (nero)
+  const kr = 20, kg = 20, kb = 22; // "nero" leggermente morbido
   final out = img.Image(width: src.width, height: src.height, numChannels: 3);
   for (var y = 0; y < src.height; y++) {
     for (var x = 0; x < src.width; x++) {
@@ -35,7 +39,23 @@ img.Image _recolor(img.Image src) {
       final r = p.r.toInt(), g = p.g.toInt(), b = p.b.toInt();
       if (_isTeal(r, g, b)) {
         final s = g / baseG;
-        out.setPixelRgb(x, y, _cl(sr * s), _cl(sg * s), _cl(sb * s));
+        final blueR = sr * s, blueG = sg * s, blueB = sb * s;
+        // Il nero si applica solo nella zona del barcode (in basso al centro),
+        // così i riflessi chiari sui libri non vengono anneriti.
+        final nx = x / src.width, ny = y / src.height;
+        final inBarcode =
+            nx >= 0.25 && nx <= 0.72 && ny >= 0.68 && ny <= 0.95;
+        // t: 0 = sfondo azzurro, 1 = barcode nero (transizione morbida).
+        final t = inBarcode
+            ? ((g - barcodeLo) / (barcodeHi - barcodeLo)).clamp(0.0, 1.0)
+            : 0.0;
+        out.setPixelRgb(
+          x,
+          y,
+          _cl(blueR * (1 - t) + kr * t),
+          _cl(blueG * (1 - t) + kg * t),
+          _cl(blueB * (1 - t) + kb * t),
+        );
       } else {
         out.setPixelRgb(x, y, r, g, b);
       }
