@@ -9,8 +9,8 @@ import 'dart:io';
 import 'package:image/image.dart' as img;
 
 const int size = 1024;
-const int content = 880; // ~86% → i libri hanno già un margine interno
-const double fadeStart = 0.88; // sfumatura solo sul bordo estremo
+const int content = 720; // ~70% → più margine, icona meglio visibile su device
+const double fadeStart = 0.86; // sfumatura sul bordo esterno
 const double fadeEnd = 0.99;
 
 int _cl(num v) => v.round().clamp(0, 255);
@@ -18,7 +18,9 @@ int _cl(num v) => v.round().clamp(0, 255);
 void main() {
   final src = img.decodePng(File('assets/icon/books.png').readAsBytesSync())!;
 
-  // Colore di sfondo: media dei pixel del bordo dell'immagine.
+  // Colore di sfondo: media di una fascia di sfondo in alto (sopra i libri),
+  // così il riempimento coincide con lo sfondo interno dell'immagine e non
+  // resta alcun riquadro chiaro.
   int rs = 0, gs = 0, bs = 0, n = 0;
   void acc(int x, int y) {
     final c = src.getPixel(x, y);
@@ -28,13 +30,14 @@ void main() {
     n++;
   }
 
-  for (var x = 6; x < src.width - 6; x += 6) {
-    acc(x, 3);
-    acc(x, src.height - 4);
-  }
-  for (var y = 6; y < src.height - 6; y += 6) {
-    acc(3, y);
-    acc(src.width - 4, y);
+  final y0 = (src.height * 0.04).round();
+  final y1 = (src.height * 0.12).round();
+  for (var y = y0; y <= y1; y += 2) {
+    for (var x = (src.width * 0.15).round();
+        x <= (src.width * 0.85).round();
+        x += 3) {
+      acc(x, y);
+    }
   }
   final br = (rs / n).round(), bg = (gs / n).round(), bb = (bs / n).round();
   final fill = img.ColorRgba8(br, bg, bb, 255);
