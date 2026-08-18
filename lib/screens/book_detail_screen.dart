@@ -88,10 +88,8 @@ class BookDetailScreen extends StatelessWidget {
           ],
           const SizedBox(height: 20),
           _statusChips(context, b),
-          if (b.rating > 0) ...[
-            const SizedBox(height: 12),
-            Center(child: StarRating(rating: b.rating, size: 28)),
-          ],
+          const SizedBox(height: 14),
+          _ratingRow(context, b),
           const SizedBox(height: 16),
           _row(context, Icons.shelves, 'Scaffale',
               b.shelf.isNotEmpty ? b.shelf : '—'),
@@ -131,6 +129,23 @@ class BookDetailScreen extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+
+  /// Valutazione a stelle modificabile direttamente dal dettaglio.
+  Widget _ratingRow(BuildContext context, Book b) {
+    final provider = context.read<LibraryProvider>();
+    return Column(
+      children: [
+        const Text('Valutazione',
+            style: TextStyle(color: Colors.black54, fontSize: 12)),
+        const SizedBox(height: 4),
+        StarRating(
+          rating: b.rating,
+          size: 32,
+          onChanged: (v) => provider.setRating(b, v),
+        ),
+      ],
     );
   }
 

@@ -327,6 +327,12 @@ class LibraryProvider extends ChangeNotifier {
     _reload();
   }
 
+  /// Cambia rapidamente la valutazione (0-5) di un libro.
+  Future<void> setRating(Book book, int rating) async {
+    await _repo.save(book.copyWith(rating: rating));
+    _reload();
+  }
+
   // --- Scaffale di default ---
 
   String get defaultShelf => _repo.getDefaultShelf();
