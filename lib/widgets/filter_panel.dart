@@ -104,8 +104,39 @@ class _FilterPanelState extends State<FilterPanel> {
               Expanded(child: _finishYearDropdown(p)),
             ],
           ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(child: _ratingDropdown(p)),
+              const SizedBox(width: 10),
+              const Expanded(child: SizedBox()),
+            ],
+          ),
         ],
       ),
+    );
+  }
+
+  Widget _ratingDropdown(LibraryProvider p) {
+    String stars(int n) => '★' * n;
+    final items = <DropdownMenuItem<int>>[
+      const DropdownMenuItem(value: 0, child: Text('Tutti i voti')),
+      const DropdownMenuItem(value: -1, child: Text('Senza voto')),
+      for (var n = 5; n >= 1; n--)
+        DropdownMenuItem(value: n, child: Text('${stars(n)} ($n)')),
+    ];
+    return DropdownButtonFormField<int>(
+      key: ValueKey('rating-${p.ratingFilter}'),
+      initialValue: p.ratingFilter,
+      isExpanded: true,
+      decoration: const InputDecoration(
+        labelText: 'Valutazione',
+        prefixIcon: Icon(Icons.star, size: 20),
+        filled: true,
+        fillColor: Colors.white,
+      ),
+      items: items,
+      onChanged: (v) => p.setRatingFilter(v ?? 0),
     );
   }
 

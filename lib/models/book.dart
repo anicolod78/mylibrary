@@ -75,6 +75,7 @@ class Book {
   final String description; // sinossi/descrizione
   final String categories; // genere/categorie (separati da virgola)
   final int pages; // numero di pagine (0 = sconosciuto)
+  final int rating; // valutazione 1-5 (0 = nessuna)
   final List<ReadingSession> readingSessions; // letture (anche riletture)
   final int dateAdded; // millisecondi epoch
 
@@ -94,6 +95,7 @@ class Book {
     this.description = '',
     this.categories = '',
     this.pages = 0,
+    this.rating = 0,
     this.readingSessions = const [],
     required this.dateAdded,
   });
@@ -114,6 +116,7 @@ class Book {
     String description = '',
     String categories = '',
     int pages = 0,
+    int rating = 0,
     List<ReadingSession> readingSessions = const [],
   }) {
     final now = DateTime.now().microsecondsSinceEpoch;
@@ -133,6 +136,7 @@ class Book {
       description: description,
       categories: categories,
       pages: pages,
+      rating: rating,
       readingSessions: readingSessions,
       dateAdded: DateTime.now().millisecondsSinceEpoch,
     );
@@ -153,6 +157,7 @@ class Book {
     String? description,
     String? categories,
     int? pages,
+    int? rating,
     List<ReadingSession>? readingSessions,
   }) {
     return Book(
@@ -171,6 +176,7 @@ class Book {
       description: description ?? this.description,
       categories: categories ?? this.categories,
       pages: pages ?? this.pages,
+      rating: rating ?? this.rating,
       readingSessions: readingSessions ?? this.readingSessions,
       dateAdded: dateAdded,
     );
@@ -192,6 +198,7 @@ class Book {
         'description': description,
         'categories': categories,
         'pages': pages,
+        'rating': rating,
         'readingSessions':
             readingSessions.map((s) => s.toMap()).toList(),
         'dateAdded': dateAdded,
@@ -217,6 +224,9 @@ class Book {
       pages: map['pages'] is int
           ? map['pages'] as int
           : int.tryParse('${map['pages']}') ?? 0,
+      rating: map['rating'] is int
+          ? map['rating'] as int
+          : int.tryParse('${map['rating']}') ?? 0,
       readingSessions: map['readingSessions'] is List
           ? (map['readingSessions'] as List)
               .whereType<Map>()

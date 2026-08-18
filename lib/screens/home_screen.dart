@@ -10,6 +10,7 @@ import '../models/book.dart';
 import '../providers/library_provider.dart';
 import '../widgets/book_cover.dart';
 import '../widgets/filter_panel.dart';
+import '../widgets/star_rating.dart';
 import 'book_detail_screen.dart';
 import 'book_form_screen.dart';
 import 'online_search_screen.dart';
@@ -112,6 +113,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 12.5, height: 1.15),
               ),
+              if (book.rating > 0)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Center(child: StarRating(rating: book.rating, size: 12)),
+                ),
             ],
           ),
         );

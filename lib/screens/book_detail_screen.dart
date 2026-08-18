@@ -5,6 +5,7 @@ import '../models/book.dart';
 import '../providers/library_provider.dart';
 import '../services/book_api_service.dart';
 import '../widgets/book_cover.dart';
+import '../widgets/star_rating.dart';
 import 'book_form_screen.dart';
 
 class BookDetailScreen extends StatelessWidget {
@@ -87,6 +88,10 @@ class BookDetailScreen extends StatelessWidget {
           ],
           const SizedBox(height: 20),
           _statusChips(context, b),
+          if (b.rating > 0) ...[
+            const SizedBox(height: 12),
+            Center(child: StarRating(rating: b.rating, size: 28)),
+          ],
           const SizedBox(height: 16),
           _row(context, Icons.shelves, 'Scaffale',
               b.shelf.isNotEmpty ? b.shelf : '—'),

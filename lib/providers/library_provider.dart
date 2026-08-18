@@ -42,6 +42,7 @@ class LibraryProvider extends ChangeNotifier {
   ReadingStatus? _statusFilter; // null = tutti gli stati
   String _genreFilter = ''; // '' = tutti
   String _finishYearFilter = ''; // '' = tutti; else anno di fine lettura
+  int _ratingFilter = 0; // 0 = tutti; 1-5 = voto esatto; -1 = senza voto
 
   /// Valore speciale del filtro scaffale per "senza scaffale".
   static const String noShelf = '__no_shelf__';
@@ -54,6 +55,7 @@ class LibraryProvider extends ChangeNotifier {
   ReadingStatus? get statusFilter => _statusFilter;
   String get genreFilter => _genreFilter;
   String get finishYearFilter => _finishYearFilter;
+  int get ratingFilter => _ratingFilter;
   BookSort get sort => _sort;
 
   int get totalCount => _all.length;
@@ -66,7 +68,8 @@ class LibraryProvider extends ChangeNotifier {
       _shelfFilter.isNotEmpty ||
       _statusFilter != null ||
       _genreFilter.isNotEmpty ||
-      _finishYearFilter.isNotEmpty;
+      _finishYearFilter.isNotEmpty ||
+      _ratingFilter != 0;
 
   /// Elenco scaffali: unione di quelli definiti e di quelli usati dai libri.
   List<String> get shelves {
@@ -115,6 +118,12 @@ class LibraryProvider extends ChangeNotifier {
           .any((s) => s.end != null && s.end!.year == y);
     }
 
+    bool matchRating(Book b) {
+      if (_ratingFilter == 0) return true;
+      if (_ratingFilter == -1) return b.rating == 0; // senza voto
+      return b.rating == _ratingFilter;
+    }
+
     list = list.where((b) =>
         match(b.title, _titleFilter) &&
         match(b.author, _authorFilter) &&
@@ -123,7 +132,8 @@ class LibraryProvider extends ChangeNotifier {
         matchShelf(b) &&
         (_statusFilter == null || b.status == _statusFilter) &&
         matchGenre(b) &&
-        matchFinishYear(b));
+        matchFinishYear(b) &&
+        matchRating(b));
 
     final result = list.toList();
     result.sort((a, b) {
@@ -185,6 +195,11 @@ class LibraryProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setRatingFilter(int v) {
+    _ratingFilter = v;
+    notifyListeners();
+  }
+
   /// Anni di fine lettura presenti nel catalogo (per il filtro).
   List<int> get finishYears {
     final set = <int>{};
@@ -211,6 +226,7 @@ class LibraryProvider extends ChangeNotifier {
     _statusFilter = null;
     _genreFilter = '';
     _finishYearFilter = '';
+    _ratingFilter = 0;
     notifyListeners();
   }
 

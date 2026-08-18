@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../models/book.dart';
 import '../providers/library_provider.dart';
 import '../widgets/book_cover.dart';
+import '../widgets/star_rating.dart';
 
 /// Form per l'aggiunta manuale o la modifica di un libro.
 ///
@@ -41,6 +42,7 @@ class _BookFormScreenState extends State<BookFormScreen> {
 
   String _shelf = ''; // '' = nessuno scaffale
   ReadingStatus _status = ReadingStatus.toRead;
+  int _rating = 0;
   String _coverData = ''; // copertina locale in base64
   late Set<String> _genres; // generi selezionati (etichette)
   late List<ReadingSession> _sessions; // letture (anche riletture)
@@ -66,6 +68,7 @@ class _BookFormScreenState extends State<BookFormScreen> {
     _genres = _splitGenres(b?.categories ?? '');
     _sessions = List<ReadingSession>.from(b?.readingSessions ?? const []);
     _status = b?.status ?? ReadingStatus.toRead;
+    _rating = b?.rating ?? 0;
     _coverData = b?.coverData ?? '';
 
     // Scaffale: in modifica quello del libro; in inserimento usa l'eventuale
@@ -121,6 +124,7 @@ class _BookFormScreenState extends State<BookFormScreen> {
         readingSessions: _sessions,
         shelf: _shelf,
         status: _status,
+        rating: _rating,
       );
       final dup = await provider.update(updated);
       if (!mounted) return;
@@ -146,6 +150,7 @@ class _BookFormScreenState extends State<BookFormScreen> {
         readingSessions: _sessions,
         shelf: _shelf,
         status: _status,
+        rating: _rating,
       );
       final dup = await provider.add(book);
       if (!mounted) return;
@@ -317,6 +322,8 @@ class _BookFormScreenState extends State<BookFormScreen> {
             _shelfSelector(shelves),
             const SizedBox(height: 6),
             _statusSelector(),
+            const SizedBox(height: 16),
+            _ratingSelector(),
             const SizedBox(height: 16),
             _sessionsEditor(),
             const SizedBox(height: 16),
@@ -578,6 +585,33 @@ class _BookFormScreenState extends State<BookFormScreen> {
       _sessions[index] =
           isStart ? s.copyWith(start: picked) : s.copyWith(end: picked);
     });
+  }
+
+  Widget _ratingSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(left: 4, bottom: 6),
+          child: Text('Valutazione',
+              style: TextStyle(color: Colors.black54, fontSize: 12)),
+        ),
+        Row(
+          children: [
+            StarRating(
+              rating: _rating,
+              size: 34,
+              onChanged: (v) => setState(() => _rating = v),
+            ),
+            if (_rating > 0)
+              TextButton(
+                onPressed: () => setState(() => _rating = 0),
+                child: const Text('Azzera'),
+              ),
+          ],
+        ),
+      ],
+    );
   }
 
   Widget _statusSelector() {
